@@ -6,14 +6,10 @@ app.use(express.json());
 
 app.post('/generate', async (req, res) => {
   const HF_TOKEN = process.env.HF_API_TOKEN;
-  if (!HF_TOKEN) {
-    return res.status(500).json({ error: 'HF_API_TOKEN is not set' });
-  }
+  if (!HF_TOKEN) return res.status(500).json({ error: 'HF_API_TOKEN is not set' });
 
   const { prompt } = req.body || {};
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt not provided' });
-  }
+  if (!prompt) return res.status(400).json({ error: 'Prompt not provided' });
 
   try {
     const response = await fetch(
@@ -29,10 +25,7 @@ app.post('/generate', async (req, res) => {
     );
 
     const data = await response.json();
-
-    if (!response.ok || data.error) {
-      return res.status(500).json({ error: data.error || 'Error from HF API' });
-    }
+    if (!response.ok || data.error) return res.status(500).json({ error: data.error || 'Error from HF API' });
 
     return res.json({ result: data });
   } catch (error) {
