@@ -29,10 +29,24 @@ app.post('/generate', async (req, res) => {
       }
     );
 
-    const data = await response.json();
-    if (!response.ok || data.error) return res.status(500).json({ error: data.error || 'Error from HF API' });
+    if (!response.ok) {
+      // Если пришла ошибка, пытаемся прочитать текст и вернуть его
+      const errorText = await response.text();
+      return res.status(500).json({ error: errorText });
+    }
 
-    return res.json({ result: data });
+    // Получаем бинарный ответ (изображение) в виде массива байт
+    const arrayBuffer = await response.arrayBuffer();
+
+    // Конвертируем бинарные данные в base64 строку
+    const base64Image = Buffer.from(arrayBuffer).toString('base64');
+
+    // Возвращаем base64 с указанием MIME типа (обычно jpeg)
+    return res.json({ 
+      success: true,
+      image: `data:image/jpeg;base64,${base64Image}`
+    });
+
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
