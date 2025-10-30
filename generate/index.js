@@ -1,6 +1,16 @@
 import express from 'express';
 import fetch from 'node-fetch';
 
+console.log('Server starting...');
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
 const app = express();
 app.use(express.json());
 
@@ -43,46 +53,3 @@ app.post('/generate', async (req, res) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[ERROR] Hugging Face API error:', errorText);
-      return res.status(response.status).json({ error: errorText });
-    }
-
-    if (contentType && contentType.includes('application/json')) {
-      // Обработка JSON-ответа
-      try {
-        const jsonData = await response.json();
-        console.log('[INFO] Received JSON data from Hugging Face');
-        return res.json({ success: true, data: jsonData });
-      } catch (jsonParseError) {
-        console.error('[ERROR] Error parsing JSON from response:', jsonParseError);
-        return res.status(500).json({ error: 'Failed to parse JSON response from HF API' });
-      }
-    } else if (contentType && contentType.startsWith('image/')) {
-      // Обработка бинарных данных (изображений)
-      try {
-        const buffer = await response.arrayBuffer();
-        const base64Image = Buffer.from(buffer).toString('base64');
-        console.log('[INFO] Converted binary response to base64 image');
-        return res.json({
-          success: true,
-          image: `data:${contentType};base64,${base64Image}`,
-        });
-      } catch (bufferError) {
-        console.error('[ERROR] Error handling binary response:', bufferError);
-        return res.status(500).json({ error: 'Failed to process binary response from HF API' });
-      }
-    } else {
-      // Неизвестный или неожиданный Content-Type
-      const textData = await response.text();
-      console.error('[ERROR] Unexpected content type:', contentType);
-      return res.status(500).json({ error: `Unexpected content type: ${contentType}`, data: textData });
-    }
-  } catch (err) {
-    console.error('[ERROR] Unexpected error in /generate handler:', err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`[INFO] Server listening on port ${port}`);
-});
