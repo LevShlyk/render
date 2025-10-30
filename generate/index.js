@@ -4,7 +4,6 @@ import fetch from 'node-fetch';
 const app = express();
 app.use(express.json());
 
-// Добавляем обработчик GET / для проверки сервера
 app.get('/', (req, res) => {
   res.send('Server is running! Use POST /generate for image generation.');
 });
@@ -30,21 +29,21 @@ app.post('/generate', async (req, res) => {
     );
 
     if (!response.ok) {
-      // Если пришла ошибка, пытаемся прочитать текст и вернуть его
+      // Если ошибка, попробуем получить текстовую информацию и вернуть ошибку
       const errorText = await response.text();
-      return res.status(500).json({ error: errorText });
+      return res.status(response.status).json({ error: errorText });
     }
 
-    // Получаем бинарный ответ (изображение) в виде массива байт
-    const arrayBuffer = await response.arrayBuffer();
+    // Получаем бинарные данные изображения из ответа
+    const buffer = await response.arrayBuffer();
 
-    // Конвертируем бинарные данные в base64 строку
-    const base64Image = Buffer.from(arrayBuffer).toString('base64');
+    // Конвертируем в base64 для передачи в JSON
+    const base64Image = Buffer.from(buffer).toString('base64');
 
-    // Возвращаем base64 с указанием MIME типа (обычно jpeg)
-    return res.json({ 
+    // Возвращаем клиенту base64-кодированное изображение с префиксом data URI
+    return res.json({
       success: true,
-      image: `data:image/jpeg;base64,${base64Image}`
+      image: `data:image/png;base64,${base64Image}`
     });
 
   } catch (error) {
